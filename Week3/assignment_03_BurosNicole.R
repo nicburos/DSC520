@@ -45,7 +45,7 @@ ggplot(heights_df, aes(earn)) + geom_histogram()
 
 ## Create a histogram of the `earn` variable using `geom_histogram()`
 ## Use 10 bins
-ggplot(heights_df, aes(earn)) + geom_histogram(binwidth = 10)
+ggplot(heights_df, aes(earn)) + geom_histogram(bins = 10)
 
 # https://ggplot2.tidyverse.org/reference/geom_density.html
 ## Create a kernel density plot of `earn` using `geom_density()`
