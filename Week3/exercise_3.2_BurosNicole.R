@@ -28,6 +28,7 @@ ggplot(survey_df) + geom_density(aes(HSDegree))
 ## Quantify normality with numbers using the stat.desc() functio
 library(pastecs)
 stat.desc(survey_df[,7])
-
+library(e1071)
+kurtosis(survey_df[,7])
 
 
