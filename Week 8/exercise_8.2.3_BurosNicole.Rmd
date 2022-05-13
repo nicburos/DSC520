@@ -1,0 +1,122 @@
+---
+title: "Exercise 8.2.3"
+author: "Nicole Buros"
+date: May 5th, 2022
+output:
+  pdf_document: default
+  word_document: default
+bibliography: C:/Users/njack/OneDrive/Documents/DSC 520/dsc520/data/bibliography.bib
+---
+
+## Exercise 8.2.3, Housing Data:
+
+Work individually on this assignment. You are encouraged to collaborate on ideas and strategies pertinent to this assignment. Data for this assignment is focused on real estate transactions recorded from 1964 to 2016 and can be found in Housing.xlsx. Using your skills in statistical correlation, multiple regression, and R programming, you are interested in the following variables: Sale Price and several other possible predictors.
+
+```{r}
+## Load the ggplot2 package
+library(readxl)
+
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/njack/OneDrive/Documents/DSC 520/dsc520")
+## Read week-7-housing.xlsx file and create data frame, summarize data and type
+excel_sheets('data/week-7-housing.xlsx')
+housing_df <- read_excel('data/week-7-housing.xlsx', sheet=1)
+```
+
+1. Explain any transformations or modifications you made to the data set
+
+  a. When I started playing around with the data in previous weeks, I changed the name of   columns that had spaces in them and replaced the spaces with underscores.
+
+2. Create two variables; one that will contain the variables Sale Price and Square Foot of Lot (same variables used from previous assignment on simple regression) and one that will contain Sale Price and several additional predictors of your choice. Explain the basis for your additional predictor selections.
+
+```{r}
+SalePrice_lm <-  lm(formula = Sale_Price ~ square_feet_total_living, data = housing_df)
+SalePriceV2_lm <-  lm(formula = Sale_Price ~ square_feet_total_living + year_built + bedrooms + bath_full_count + zip5, data = housing_df)
+```
+  a. I chose to add year built, bedrooms, bath count, and zip code as these are all key factors in determining a home's value and therefore sales price.
+
+3. Execute a summary() function on two variables defined in the previous step to compare the model results. What are the R2 and Adjusted R2 statistics? Explain what these results tell you about the overall model. Did the inclusion of the additional predictors help explain any large variations found in Sale Price?
+```{r}
+summary(SalePrice_lm)
+summary(SalePriceV2_lm)
+```
+  a. The inclusion of other factors only added a marginal explanation for variation of sales price, and it does seem that square footage is still the biggest factor in the variation. Alone, it accounts for 21% of the variation, while together with other predictors they all account for 22%, meaning the other factors only accounted for an additional 1% of the variation in sales price.
+
+4. Considering the parameters of the multiple regression model you have created. What are the standardized betas for each parameter and what do the values indicate?
+```{r}
+library(lm.beta)
+lm.beta(SalePriceV2_lm)
+```
+  a. They each indicate their affect on sales price. For example, as square footage increases by 1 standard deviation, sale price increases by .43 standard deviations.
+
+5. Calculate the confidence intervals for the parameters in your model and explain what the results indicate.
+```{r}
+confint(SalePriceV2_lm)
+```
+  a. Square feet and year built have relatively tight intervals, meaning it's very likely that our model is representative of the true population. However, zip does cross zero which indicates a bad model and a negative relationship with the outcome.
+
+6. Assess the improvement of the new model compared to your original model (simple regression model) by testing whether this change is significant by performing an analysis of variance.
+```{r}
+anova(SalePrice_lm, SalePriceV2_lm)
+```
+
+7. Perform casewise diagnostics to identify outliers and/or influential cases, storing each function's output in a dataframe assigned to a unique variable name.
+```{r}
+housing_df$residuals <- resid(SalePriceV2_lm)
+housing_df$stand.residuals <- rstandard(SalePriceV2_lm)
+housing_df$stude.residuals <- rstudent(SalePriceV2_lm)
+housing_df$cooks.distance <- cooks.distance(SalePriceV2_lm)
+housing_df$dfbeta <- dfbeta(SalePriceV2_lm)
+housing_df$dffit <- dffits(SalePriceV2_lm)
+housing_df$leverage <- hatvalues(SalePriceV2_lm)
+housing_df$covar <- covratio(SalePriceV2_lm)
+head(housing_df)
+```
+
+8. Calculate the standardized residuals using the appropriate command, specifying those that are +-2, storing the results of large residuals in a variable you create.
+```{r}
+housing_df$large.standresid <- housing_df$stand.residuals > 2 | housing_df$stand.residuals < -2 
+```
+
+9. Use the appropriate function to show the sum of large residuals.
+```{r}
+sum(housing_df$large.standresid)
+```
+10. Which specific variables have large residuals (only cases that evaluate as TRUE)?
+```{r}
+housing_df[housing_df$large.standresid, c("Sale_Price", "square_feet_total_living", "year_built", "bedrooms", "bath_full_count", "zip5", "stand.residuals")]
+```
+
+
+11. Investigate further by calculating the leverage, cooks distance, and covariance rations. Comment on all cases that are problematics.
+```{r}
+housing_df[housing_df$large.standresid, c("cooks.distance", "leverage", "covar")]
+```
+
+12. Perform the necessary calculations to assess the assumption of independence and state if the condition is met or not.
+```{r}
+library(car)
+dwt(SalePriceV2_lm)
+```
+  a. Since the value is less than 1, and the p-value is 0, it is not met.
+
+13. Perform the necessary calculations to assess the assumption of no multicollinearity and state if the condition is met or not.
+```{r}
+vif(SalePriceV2_lm)
+1/vif(SalePriceV2_lm)
+mean(vif(SalePriceV2_lm))
+```
+  a. For this model, all VIF values are well below 10, all tolerance statistics well above 0.2, and the average VIF is still very close to 1 which all indicate there is no collinearity.
+
+14. Visually check the assumptions related to the residuals using the plot() and hist() functions. Summarize what each graph is informing you of and if any anomalies are present.
+```{r}
+plot(SalePriceV2_lm)
+hist(housing_df$residuals)
+```
+
+
+15. Overall, is this regression model unbiased? If an unbiased regression model, what does this tell us about the sample vs. the entire population model?
+  a. Overall, I think the model relatively unbiased and representative of the entire population.
+
+## References
+* Discovering Statistics Using R [@field2012discovering]
